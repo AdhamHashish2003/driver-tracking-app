@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 
-const BACKEND_URL = 'http://localhost:3000';
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://driver-tracking-app-2.onrender.com';
 
 class SocketService {
   private socket: Socket | null = null;

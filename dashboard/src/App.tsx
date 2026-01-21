@@ -41,7 +41,8 @@ function App() {
     });
 
     // Fetch initial drivers via REST as fallback
-    fetch('http://localhost:3000/api/drivers')
+    const API_URL = import.meta.env.VITE_API_URL || 'https://driver-tracking-app-2.onrender.com';
+    fetch(API_URL + '/api/drivers')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
