@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:3000/api';
+// Use environment variable or fallback to production URL
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://driver-tracking-app-2.onrender.com/api';
 
 export interface Driver {
   id: string;

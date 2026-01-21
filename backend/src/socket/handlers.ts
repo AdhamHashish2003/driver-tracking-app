@@ -43,6 +43,19 @@ export function setupSocketHandlers(io: Server) {
     // Handle location updates from drivers
     socket.on('driver:location', (data: LocationUpdate) => {
       const { driverId, lat, lng, speed, heading } = data;
+
+      // Validate required fields
+      if (!driverId || typeof lat !== 'number' || typeof lng !== 'number') {
+        console.warn('Invalid location update received:', data);
+        return;
+      }
+
+      // Validate coordinate ranges
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        console.warn('Invalid coordinates received:', { lat, lng });
+        return;
+      }
+
       const now = new Date().toISOString();
 
       // Update driver's current location
@@ -81,6 +94,19 @@ export function setupSocketHandlers(io: Server) {
     // Handle status updates
     socket.on('driver:status', (data: StatusUpdate) => {
       const { driverId, status } = data;
+
+      // Validate required fields
+      if (!driverId || !status) {
+        console.warn('Invalid status update received:', data);
+        return;
+      }
+
+      // Validate status value
+      const validStatuses = ['offline', 'available', 'on_route', 'on_break'];
+      if (!validStatuses.includes(status)) {
+        console.warn('Invalid status value:', status);
+        return;
+      }
 
       db.updateDriver(driverId, {
         status,

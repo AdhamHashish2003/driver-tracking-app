@@ -1,10 +1,12 @@
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:3000';
+// Use environment variable or fallback to production URL
+const SOCKET_URL = process.env.EXPO_PUBLIC_API_URL || 'https://driver-tracking-app-2.onrender.com';
 
 class SocketService {
   private socket: Socket | null = null;
   private driverId: string | null = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   connect(driverId: string): Socket {
     this.driverId = driverId;
@@ -13,27 +15,54 @@ class SocketService {
       return this.socket;
     }
 
+    // Clean up any existing socket
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+    }
+
     this.socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
     });
 
     this.socket.on('connect', () => {
-      console.log('Socket connected');
+      console.log('Socket connected to:', SOCKET_URL);
       this.socket?.emit('driver:join', driverId);
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
+      }
     });
 
-    this.socket.on('disconnect', () => {
-      console.log('Socket disconnected');
+    this.socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+      // If server closed connection, try to reconnect
+      if (reason === 'io server disconnect') {
+        this.scheduleReconnect();
+      }
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+      console.error('Socket connection error:', error.message);
     });
 
     return this.socket;
+  }
+
+  private scheduleReconnect(): void {
+    if (this.reconnectTimer || !this.driverId) return;
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      if (this.driverId) {
+        console.log('Attempting to reconnect...');
+        this.connect(this.driverId);
+      }
+    }, 3000);
   }
 
   sendLocation(lat: number, lng: number, speed?: number, heading?: number): void {

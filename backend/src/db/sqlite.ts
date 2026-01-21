@@ -80,7 +80,8 @@ class Database {
   }
 
   getDriverByEmail(email: string): Driver | undefined {
-    return Array.from(this.drivers.values()).find(d => d.email === email);
+    const normalizedEmail = email.toLowerCase();
+    return Array.from(this.drivers.values()).find(d => d.email.toLowerCase() === normalizedEmail);
   }
 
   updateDriver(id: string, updates: Partial<Driver>): Driver | undefined {
