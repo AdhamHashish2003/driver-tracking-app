@@ -41,7 +41,7 @@ class SocketService {
     }
   }
 
-  on(event: string, callback: Function): void {
+  on(event: string, callback: Function): () => void {
     if (!this.socket) {
       this.connect();
     }
@@ -52,6 +52,11 @@ class SocketService {
     this.listeners.get(event)?.add(callback);
 
     this.socket?.on(event, callback as any);
+
+    // Return unsubscribe function
+    return () => {
+      this.off(event, callback);
+    };
   }
 
   off(event: string, callback: Function): void {
